@@ -1,0 +1,10 @@
+project:
+  type: website
+  
+
+format:
+  html:
+    theme: [sandstone, theme/custom.scss]
+
+
+
