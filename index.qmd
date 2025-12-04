@@ -19,6 +19,7 @@ library(gt)
 ```
 
 
+
 ```{ojs}
 //| label: load-data
 //| message: false
@@ -26,266 +27,68 @@ library(gt)
 PlotNew = require("@observablehq/plot")
 
 // upload data
-mfr_site = FileAttachment("data/mfr_site_level_tbl.csv").csv({ typed: true })
-mfr_site_stats_tbl = aq.from(mfr_site)
-
-mfr_site_stats_longer_tbl = mfr_site_stats_tbl
-  .select(
-    "Province",
-    "Health Facility",
-    "Period",
-    "1st ANC visit",
-    "1st ANC clients tested for HIV",
-    "Total HIV+ clients at ANC",
-    "Known HIV+ at entry",
-    "New HIV-positive clients",
-    "Initiated on ART"
-  )
-  .fold(aq.not("Province", "Health Facility", "Period"), {
-    as: ["category", "percent"]
-  }) // unpivot/fold the data
-  .objects()
-  
-mfr_site_value_box = mfr_site_stats_tbl
-  .select(
-    "Province",
-    "Health Facility",
-    "Period",
-    "% of pregnant women tested for HIV (Facility)",
-    "Positivity at ANC",
-    "Positivity",
-    "Positivity < 2 month",
-    "Positivity 2 - 12 month",
-    "Positivity 12 - 18 month",
-    "Linkage at ANC",
-    "Linkage at CCR",
-    "% of women with VL result at ANC",
-    "% of women with VL result at CRC",
-    "% of women with suppressed VL at ANC",
-    "% of women with suppressed VL at CRC",
-    "% of children with VL result",
-    "% of children with suppressed VL"
-  )
-  .fold(aq.not("Province", "Health Facility", "Period"), {
-    as: ["category", "percent"]
-  }) // unpivot/fold the data
-  .objects()
-  
-selectedbox = mfr_site_value_box
-  .filter((d) => d.Province === pickProvince)
-  .filter((d) => d["Health Facility"] === pickHealthFacility)
-  .filter((d) => d.Period === pickQuarter)
-  
-// Filter data based on selections
-selectedData_site = mfr_site
-  .filter((d) => d.Province === pickProvince)
-  .filter((d) => d["Health Facility"] === pickHealthFacility)
-  .filter((d) => d.Period === pickQuarter)
-  
-
-pctTestedAtANC = selectedData_site.length > 0
-  ? (selectedData_site[0]["% of pregnant women tested for HIV (Facility)"] * 100).toFixed(1) + "%"
-  : null
-  
-positivityAtANC = selectedData_site.length > 0
-  ? (selectedData_site[0]["Positivity at ANC"] * 100).toFixed(1) + "%"
-  : null
-  
-pmtcARTCoverageAtANC = selectedData_site.length > 0
-  ? (selectedData_site[0]["PMTCT ART Coverage"] * 100).toFixed(1) + "%"
-  : null
-  
-EIDPositivity = selectedData_site.length > 0
-  ? (selectedData_site[0]["Positivity"] * 100).toFixed(1) + "%"
-  : null
-  
-EIDPositivityles2mo = selectedData_site.length > 0
-  ? (selectedData_site[0]["Positivity < 2 month"] * 100).toFixed(1) + "%"
-  : null
-  
-EIDPositivity212mo = selectedData_site.length > 0
-  ? (selectedData_site[0]["Positivity 2 - 12 month"] * 100).toFixed(1) + "%"
-  : null
-  
-EIDPositivity1218mo = selectedData_site.length > 0
-  ? (selectedData_site[0]["Positivity 12 - 18 month"] * 100).toFixed(1) + "%"
-  : null
-  
-HEIARTCoverage = selectedData_site.length > 0
-  ? (selectedData_site[0]["PMTCT_HEI_POS_ART Coverage"] * 100).toFixed(1) + "%"
-  : null
-  
-linkageANC = selectedData_site.length > 0
-  ? (selectedData_site[0]["Linkage at ANC"] * 100).toFixed(1) + "%"
-  : null
-  
-linkageCRC = selectedData_site.length > 0
-  ? (selectedData_site[0]["Linkage at CCR"] * 100).toFixed(1) + "%"
-  : null
-  
-womenVLResANC = selectedData_site.length > 0
-  ? (selectedData_site[0]["% of women with VL result at ANC"] * 100).toFixed(1) + "%"
-  : null
-  
-womenVLResCRC = selectedData_site.length > 0
-  ? (selectedData_site[0]["% of women with VL result at CRC"] * 100).toFixed(1) + "%"
-  : null
-  
-womenVLSupANC = selectedData_site.length > 0
-  ? (selectedData_site[0]["% of women with suppressed VL at ANC"] * 100).toFixed(1) + "%"
-  : null
-  
-womenVLSupCRC = selectedData_site.length > 0
-  ? (selectedData_site[0]["% of women with suppressed VL at CRC"] * 100).toFixed(1) + "%"
-  : null
-  
-childVLRes = selectedData_site.length > 0
-  ? (selectedData_site[0]["% of children with VL result"] * 100).toFixed(1) + "%"
-  : null
-  
-childVLSup = selectedData_site.length > 0
-  ? (selectedData_site[0]["% of children with suppressed VL"] * 100).toFixed(1) + "%"
-  : null
-```
+comp1_final = FileAttachment("data/final/merged_all_data.csv").csv({ typed: true })
 
 
-```{ojs}
-//| label: import HEI-Infant data
-//| output: false
-pos_final_site_tbl = FileAttachment("data/pos_final_site_tbl.csv").csv({typed: true})
 
-
-selectedProvPos = pos_final_site_tbl
-  .filter((d) => d.Province === pickProvince)
-  .filter((d) => d["Health Facility"] === pickHealthFacility)
+enrichedData = filteredMonth.map((d) => {
+  const newRow = { ...d };
   
-mfr_site_eid_tbl = mfr_site_stats_tbl
-  .select(
-    "Province",
-    "Health Facility",
-    "Period",
-    "1st PCR collected",
-    "1st PCR collected (<2 Months)",
-    "1st PCR collected (2-12 Months)",
-    "1st PCR collected (12-18 Months)",
-
-    "New HIV+ infants (0-12 Months)",
-    "New HIV+ infants (12-18 Months)",
-    "New HIV+ infants initiated ART"
-  )
-  .fold(aq.not("Province", "Health Facility", "Period"), {
-    as: ["category", "percent"]
-  }) // unpivot/fold the data
-  .objects()
+  // Get all column names that need percentage conversion
+  const columnsToConvert = Object.keys(d).filter((key) => 
+    key.startsWith("%") || 
+    key.startsWith("Positividade") || 
+    key.startsWith("Cobertura") || 
+    key.startsWith("Ligacao")
+  );
   
-
-selectedSiteEID = mfr_site_eid_tbl
-  .filter((d) => d.Province === pickProvince)
-  .filter((d) => d["Health Facility"] === pickHealthFacility)
-```
-
-
-```{ojs}
-//| label: Viral Load Results & Suppression
-//| output: false
-mfr_site_suppression_tbl = mfr_site_stats_tbl
-  .select(
-    "Province",
-    "Health Facility",
-    "Period",
-    "% of women with VL result at ANC",
-    "% of women with VL result at CRC",
-    "% of women with suppressed VL at ANC",
-    "% of women with suppressed VL at CRC",
-    "% of children with VL result",
-    "% of children with suppressed VL"
-  )
-  .fold(aq.not("Province", "Health Facility", "Period"), {
-    as: ["category", "percent"]
-  }) // unpivot/fold the data
-  .objects()
+  // Convert each proportion to percentage
+  columnsToConvert.forEach((col) => {
+    const value = newRow[col];
+    if (value !== null && value !== undefined && !isNaN(value)) {
+      newRow[col] = (value * 100).toFixed(1) + "%";
+    } else {
+      newRow[col] = null;
+    }
+  });
   
-selectedSiteSupress = mfr_site_suppression_tbl
-  .filter((d) => d.Province === pickProvince)
-  .filter((d) => d["Health Facility"] === pickHealthFacility)
-```
+  return newRow;
+});
 
-```{ojs}
-//| label: CAD Site Analysis
-//| output: false
-cad_site = FileAttachment("data/CAD_site_level_tbl.csv").csv({ typed: true })
 
-cad_site_tbl = aq.from(cad_site)
-
-cad_site_longer_tbl = cad_site_tbl
-  .fold(aq.not("Province", "Health Facility", "Period"), {
-    as: ["retention", "percent"]
-  }) // unpivot/fold the data
-  .objects()
-  
-cad_site_ret_data = cad_site_longer_tbl.filter((d) =>
-  d.retention.toLowerCase().includes("retention")
-)
-
-selectedSiteRet = cad_site_ret_data
-  .filter((d) => d.Province === pickProvince)
-  .filter((d) => d["Health Facility"] === pickHealthFacility)
-  
-cad_site_test_data = cad_site_longer_tbl.filter((d) =>
-  d.retention.toLowerCase().includes("test")
-)
-
-selectedSiteTest = cad_site_test_data
-  .filter((d) => d.Province === pickProvince)
-  .filter((d) => d["Health Facility"] === pickHealthFacility)
-  
-cad_site_result_data = cad_site_longer_tbl.filter((d) =>
-  d.retention.toLowerCase().includes("result")
-)
-
-selectedSiteResult = cad_site_result_data
-  .filter((d) => d.Province === pickProvince)
-  .filter((d) => d["Health Facility"] === pickHealthFacility)
 ```
 
 
 #  {.sidebar}
 
-This dashboard displays program performance at site level:
+Este painel apresenta o desempenho do programa a nível da unidade sanitária:
 
-|                     |                                         |
-|---------------------|-----------------------------------------|
-| **Health Facility** | m2m supported sites in Mozambique       |
-| **Number of sites** | 28 sites                                |
-
-
+|                     |          |
+|---------------------|----------|
+| **Número de sites** | 24 sites |
 
 
 ```{ojs}
 //| label: province selector
 viewof pickProvince = Inputs.radio(
-  [...new Set(mfr_site_stats_longer_tbl.map((d) => d.Province))],
-  { label: "Choose Province", value: "Cabo Delgado", unique: true }
+  [...new Set(comp1_final.map((d) => d.Provincia))],
+  { label: "Seleccione Provincia", value: "Nampula", unique: true }
 )
 ```
-
 
 ```{ojs}
 //| label: selected-province
 //| output: false
-selectedProv = mfr_site_stats_longer_tbl.filter(
-  (d) => d.Province === pickProvince
-)
+selectedProv = comp1_final.filter((d) => d.Provincia === pickProvince)
 ```
-
 
 ```{ojs}
 //| label: Health Facility selector
 viewof pickHealthFacility = Inputs.radio(
-  [...new Set(selectedProv.map((d) => d["Health Facility"]))],
+  [...new Set(selectedProv.map((d) => d["Unidade Sanitaria"]))],
   {
     label: "Choose Health Facility",
-    value: [...new Set(selectedProv.map((d) => d["Health Facility"]))][0],
+    value: [...new Set(selectedProv.map((d) => d["Unidade Sanitaria"]))][0],
     unique: true
   }
 )
@@ -295,567 +98,1018 @@ viewof pickHealthFacility = Inputs.radio(
 //| label: Filter data by selected health facility
 //| output: false
 selectedHF = selectedProv.filter(
-  (d) => d["Health Facility"] === pickHealthFacility
+  (d) => d["Unidade Sanitaria"] === pickHealthFacility
 )
 ```
 
 
 ```{ojs}
-//| label: quarter selector
-viewof pickQuarter = Inputs.radio([...new Set(mfr_site.map((d) => d.Period))], {
-  label: "Choose Quarter",
-  value: "2025Q4",
-  unique: true
+viewof selectedMonth = Inputs.select(
+  Array.from(new Set(selectedHF.map((d) => d.Periodo))),
+  {
+    label: "Filtrar por mês",
+    multiple: true
+    // value: [selectedHF[9].Periodo]
+  } // Use multiple: true for multi-select
+)
+```
+
+```{ojs}
+//| label: Filter data by month
+//| output: false
+filteredMonth = selectedHF.filter((d) => {
+  const monthMatch =
+    selectedMonth.length === 0 || selectedMonth.includes(d.Periodo);
+  // const nameMatch = d.name.toLowerCase().includes(searchText.toLowerCase());
+  return monthMatch; // && nameMatch
 })
 ```
 
 
 ::: {.callout-tip collapse="true"}
-## Go to the Main Dashboard
+## Aceda ao Painel Principal
 
-Click the following link to access the [Main Dashboard](https://anrungo.github.io/m2m-moz-dashboard/#){target="_blank"}.
+Clique no link para aceder ao [Painel Principal](https://anrungo.github.io/m2m-moz-dashboard/#){target="_blank"}.
 :::
 
 ------------------------------------------------------------------------
 
 ::: {.callout-note collapse="true"}
-## Data Source
+## Fonte de dados
 
-The data are collected monthly and submitted to DHIS2 hosted at [mothers2mothers](https://m2m.org/){target="_blank"}.
+Os dados são recolhidos mensalmente e enviados para o DHIS2, alojado em [mothers2mothers](https://m2m.org/){target="_blank"}.
 :::
 
 
 ------------------------------------------------------------------------
 
-::: callout-important
-**To zoom the graph:** Click on the symbol appearing at the bottom, on the right-hand side of the graph when hovering over.
-:::
-
-------------------------------------------------------------------------
-
 <br>
-
-<br>
-
 
 <p style="color:#21618C; text-align: center"> &copy; 
                   <script>document.write(new Date().getFullYear())</script> m2m-Mozambique.</p>
             
 
 
-# PMTCT
+# Agenda MG
 
+## Column {width="100%"}
 
-## Row {height="25%"}
-
-
-::: {.valuebox icon= "people" color="#b5b1d8"}
-Tested at ANC:
-
-`{ojs} pctTestedAtANC` 
-
-:::
-
-
-::: {.valuebox icon= "graph-down-arrow" color="#F5A799"}
-Positivity at ANC:
-
-`{ojs} positivityAtANC`
-
-:::
-
-::: {.valuebox icon= "bar-chart-line-fill" color="#B6DFD2"}
-PTMCT ART Coverage:
-
-`{ojs} pmtcARTCoverageAtANC`
-
-:::
-
-::: {.valuebox icon= "graph-down-arrow" color="#ffe3af"}
-PCR Yield:
-
-`{ojs} EIDPositivity`
-
-:::
-
-::: {.valuebox icon= "graph-up-arrow" color="#59C1A5"}
-EID ART Coverage:
-
-`{ojs} HEIARTCoverage`
-
-:::
-
-::: {.valuebox icon= "bar-chart-line" color="#FCB715"}
-Linkage to MM:
-
-`{ojs} linkageANC`
-
-:::
-
-## Row {height="100%"}
-
-### Column {width="50%"}
 
 ```{ojs}
-//| title: "PMTCT Cascade"
-createPMTCTPlot({
-  titleText: "PMTCT Cascade:",
-  data: selectedHF,
-  x: "Period",
-  y: "percent",
-  fill: "Period",
-  fx: "category",
-  textLabel: (d) => `${d.percent}`,
-  pickProvince: pickHealthFacility
-})
-```
+//| title: "Seguimento Mulher Grávida"
+html`
+<table style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 14px;">
+<thead>
+<tr>
+<th style="padding: 12px; text-align: left; border: 1px solid #ddd; white-space: nowrap; background-color: #b5b1d8;">Provincia</th>
+<th style="padding: 12px; text-align: left; border: 1px solid #ddd; white-space: nowrap; background-color: #b5b1d8;">Unidade Sanitaria</th>
+<th style="padding: 12px; text-align: left; border: 1px solid #ddd; white-space: nowrap; background-color: #b5b1d8;">Periodo</th>
 
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #b5b1d8;">N° de utentes esperados (CAD CPN)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #b5b1d8;">N° de utentes que vieram durante o mês (CAD CPN)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #b5b1d8;">N° de utentes que faltaram as consultas durante o mês (CAD CPN)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #b5b1d8;">Adherence assessments done (CAD CPN) | Numerator</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #b5b1d8;">Adherence assessments done (CAD CPN) | Demoninator</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #b5b1d8;">% avaliação da adesão (CAD CPN)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #b5b1d8;">Adherence assessments >80% adherent (CAD CPN) | Numerator</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #b5b1d8;">Adherence assessments >80% adherent (CAD CPN) | Demoninator</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #b5b1d8;">% avaliação da adesão >80% aderentes (CAD CPN)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #b5b1d8;">HIV+ women on ART refill (CAD CPN) | Done</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #b5b1d8;">HIV+ women on ART refill (CAD CPN) | Due</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #b5b1d8;">% Levantamento de ARV (CAD CPN)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #b5b1d8;">VL load tests taken up (CAD CPN) | Done</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #b5b1d8;">VL load tests taken up (CAD CPN) | Due</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #b5b1d8;">% teste de CV feita (CAD CPN)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #b5b1d8;">VL load test result obtained (CAD CPN) | Done</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #b5b1d8;">VL load test result obtained (CAD CPN) | Due</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #b5b1d8;">% resultados de CV obtidos (CAD CPN)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #b5b1d8;">N° de utentes faltosos (CAD CPN)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #b5b1d8;">N° de utentes seguidos durante o mês (CAD CPN)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #b5b1d8;">% de utentes seguidos durante o mês (CAD CPN)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #b5b1d8;">N° de utentes contactados (CAD CPN)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #b5b1d8;">% de utentes contactados (CAD CPN)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #b5b1d8;">N° de utentes que retornaram a US (CAD CPN)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #b5b1d8;">% de utentes que retornaram a US (CAD CPN)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #b5b1d8;">Total de Saídas do Programa (CAD CPN)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 100px; word-wrap: break-word; background-color: #b5b1d8;">Alta (CAD CPN)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 100px; word-wrap: break-word; background-color: #b5b1d8;">Referido (CAD CPN)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 100px; word-wrap: break-word; background-color: #b5b1d8;">Transferido (CAD CPN)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 100px; word-wrap: break-word; background-color: #b5b1d8;">Abandono (CAD CPN)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 100px; word-wrap: break-word; background-color: #b5b1d8;">Óbito (CAD CPN)</th>
+</tr>
+</thead>
+<tbody>
+${enrichedData.map((d, i) => html`<tr style="background-color: ${i % 2 === 0 ? '#f9f9f9' : 'white'};">
 
-::: callout-important
-**Para ampliar o gráfico:** Clique no símbolo que aparece na parte inferior direita do gráfico ao passar o cursor sobre o mesmo.
-:::
-
-### Column {width="50%"}
-
-::: {.card title="HEI Cascade"}
-```{ojs}
-Plot.plot({
-  height: 650,
-  style: {
-    fontSize: "20px" 
-  },
-  x: { axis: null },
-  y: { axis: null, tickFormat: "s", grid: true },
-  marks: [
-    Plot.barY(selectedSiteEID, {
-      x: "Period",
-      y: "percent",
-      fill: "Period",
-      fx: "category",
-      sort: { x: null, fx: { reduce: "sum" } },
-      tip: true,
-      channels: { name: "category" },
-      title: (d) => `${d.category}\nQuarter: ${d.Period}\nTotal: ${d.percent}`
-    }),
-    Plot.text(selectedSiteEID, {
-      x: (d) => d.Period,
-      y: "percent",
-      text: (d) => d.percent.toLocaleString(),
-      fx: "category",
-      dx: 0,
-      dy: -8,
-      fontSize: 14,
-      fill: "black",
-      textAnchor: "middle",
-      fontWeight: "500"
-    }),
-    Plot.ruleY([0])
-  ],
-  color: {
-    legend: true,
-    domain: ["2025Q1", "2025Q2", "2025Q3", "2025Q4"],
-    range: ["#847dbb", "#B6DFD2", "#FCB715", "#b5b1d8"]
-  },
-  fx: {
-    label: null,
-    tickFormat: (d) => {
-      // Custom wrapping for specific long labels
-      const wrappedLabels = {
-        "1st PCR collected": "1st PCR\ncollected",
-        "1st PCR collected (<2 Months)": "1st PCR collected\n(<2 Months)",
-        "1st PCR collected (2-12 Months)": "1st PCR collected\n(2-12 Months)",
-        "1st PCR collected (12-18 Months)": "1st PCR collected\n(12-18 Months)",
-        "New HIV+ infants (0-12 Months)": "New HIV+ infants\n(0-12 Months)",
-        "New HIV+ infants (12-18 Months)": "New HIV+ infants\n(12-18 Months)",
-        "New HIV+ infants initiated ART": "New HIV+ infants\ninitiated ART"
-      };
-      return wrappedLabels[d] || wrapText(d, 12);
-    },
-    tickSize: 0,
-    tickPadding: 5
-  },
-  width,
-  height: 500,
-  marginLeft: 50,
-  marginBottom: 150, // Increased space for two-line labels
-  marginTop: 35,
-  style: {
-    fontFamily:
-      "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
-  }
-})
-```
-:::
+<td style="padding: 10px; border: 1px solid #ddd; white-space: nowrap;">${d.Provincia}</td>
+<td style="padding: 10px; border: 1px solid #ddd; white-space: nowrap;">${d["Unidade Sanitaria"]}</td>
+<td style="padding: 10px; border: 1px solid #ddd; white-space: nowrap;">${d.Periodo}</td>
   
-
-::: {.card title="PCR Yield by age groups"}
-```{ojs}
-PlotNew.plot({
-height: 650,
-  x: { axis: null },
-  y: { axis: null, tickFormat: "s", grid: true },
-    style: {
-    fontSize: "20px" // Adjust this value as needed
-    },
-  marks: [
-    PlotNew.barY(selectedProvPos, {
-      x: "Period",
-      y: "percent",
-      fill: "Period",
-      fx: "name",
-      sort: { x: null, fx: { reduce: "sum" } },
-      tip: true,
-      channels: { name: "name" },
-      title: (d) => `${d.name}\nQuarter: ${d.Period}\nTotal: ${d.percent}`
-    }),
-    PlotNew.text(selectedProvPos, {
-      x: (d) => d.Period,
-      y: "percent",
-      text: (d) => d.np,
-      fx: "name",
-      dx: 0,
-      dy: -20,
-      fontSize: 14,
-      fill: "black",
-      textAnchor: "middle",
-      fontWeight: "500"
-    }),
-    PlotNew.ruleY([0])
-  ],
-  color: {
-    legend: true,
-    domain: ["2025Q1", "2025Q2", "2025Q3", "2025Q4"],
-    range: ["#847dbb", "#B6DFD2", "#FCB715", "#b5b1d8"]
-  },
-  label: null,
-  width,
-  marginLeft: 50,
-  marginBottom: 60,
-  marginTop: 35
-})
-```
-:::
-
-
-# Retention & Viral Load
-
-## Row {height="25%"}
-
-::: {.valuebox icon= "graph-down-arrow" color="#ffcf71"}
-Positivity < 2 month:
-
-`{ojs} EIDPositivityles2mo`
-
-:::
-
-::: {.valuebox icon= "graph-down-arrow" color="#ffe3af"}
-Positivity 2 - 12 month:
-
-`{ojs} EIDPositivity212mo`
-
-:::
-
-::: {.valuebox icon= "graph-down-arrow" color="#fff1d9"}
-Positivity 12 - 18 month:
-
-`{ojs} EIDPositivity1218mo`
-
-:::
-
-::: {.valuebox icon= "bar-chart-line-fill" color="#847dbb"}
-VL Suppression at ANC:
-
-`{ojs} womenVLSupANC`
-
-:::
-
-::: {.valuebox icon= "bar-chart-line-fill" color="#b5b1d8"}
-VL Suppression at CRC:
-
-`{ojs} womenVLSupCRC`
-
-:::
-
-::: {.valuebox icon= "bar-chart-line-fill" color="#dbd9ed"}
-Children VL Suppression:
-
-`{ojs} childVLSup`
-
-:::
-
-## Row {height="100%"}
-
-### Column {width="50%"}
-
-::: {.card title="Viral Load Test"}
-```{ojs}
-createRetentionPlot({
-data: selectedSiteTest,
-colorDomain: [
-  "Pregnant women VL test",
-  "Breastfeeding women VL test",
-  "Children VL test"
-],
-colorRange: ["#847dbb", "#B6DFD2", "#FCB715"]
-})
-```
-:::
-
-::: {.card title="Viral Load Result"}
-```{ojs}
-createRetentionPlot({
-data: selectedSiteResult,
-colorDomain: [
-  "Pregnant women VL result",
-  "Breastfeeding women VL result",
-  "Children VL result"
-],
-colorRange: ["#847dbb", "#B6DFD2", "#FCB715"]
-})
-```
-:::
-
-### Column {width="50%"}
-
-::: {.card title="ART Retention"}
-```{ojs}
-createRetentionPlot({
-data: selectedSiteRet,
-colorDomain: [
-  "Pregnant women retention",
-  "Breatfeeding women retention",
-  "Children retention"
-],
-colorRange: ["#847dbb", "#B6DFD2", "#FCB715"]
-})
-```
-:::
-
-::: {.card title="VL Results and Suppression"}
-```{ojs}
-Plot.plot({
-height: 650,
-  x: { axis: null },
-  y: { axis: null, tickFormat: "s", grid: true },
-  style: {
-    fontSize: "20px" // Adjust this value as needed
-  },
-  //title: html`${textcolor("Viral Load Results and Suppression:", {
-  //  background: "purple",
-  //  fontStyle: "normal"
-  //})} ${pickProvince}`,
-  // title: `Viral Load Results and Suppression: ${pickProvince}`,
-  // subtitle: "Province",
-  marks: [
-    Plot.barY(selectedSiteSupress, {
-      x: "Period",
-      y: "percent",
-      fill: "Period",
-      fx: "category",
-      sort: { x: null, fx: { reduce: "sum" } },
-      tip: true,
-      channels: { name: "category" },
-      title: (d) => `${d.category}\nQuarter: ${d.Period}\nTotal: ${d.percent}`
-    }),
-    // Remover a duplicação - mostrar texto apenas uma vez por barra
-    Plot.text(selectedSiteSupress, {
-      x: (d) => d.Period,
-      y: "percent",
-      text: (d) => `${(d.percent.toLocaleString() * 100).toFixed(1)}%`,
-      fx: "category", // Importante: adicionar fx aqui também
-      dx: 0,
-      dy: -8,
-      fontSize: 14,
-      fill: "black",
-      textAnchor: "middle",
-      fontWeight: "500"
-    }),
-    Plot.ruleY([0])
-  ],
-  color: {
-    legend: true,
-    domain: ["2025Q1", "2025Q2", "2025Q3", "2025Q4"],
-    range: ["#847dbb", "#B6DFD2", "#FCB715", "#b5b1d8"]
-  },
-  fx: {
-    label: null,
-    tickFormat: (d) => {
-      // Custom wrapping for specific long labels
-      const wrappedLabels = {
-        "% of women with VL result at ANC": "% of women with\nVL result at ANC",
-        "% of women with VL result at CRC": "% of women with\nVL result at CRC",
-        "% of women with suppressed VL at ANC":
-          "% of women with\nsuppressed VL at ANC",
-        "% of women with suppressed VL at CRC":
-          "% of women with\nsuppressed VL at CRC",
-        "% of children with VL result": "% of children with\nVL result",
-        "% of children with suppressed VL": "% of children with\nsuppressed VL"
-      };
-      return wrappedLabels[d] || wrapText(d, 12);
-    },
-    tickSize: 0,
-    tickPadding: 5
-  },
-  label: null,
-  width,
-  marginLeft: 50,
-  marginBottom: 70,
-  marginTop: 35 // Espaço para os valores no topo
-})
-```
-:::
-
-
-```{ojs}
-//| label: import-textcolor
-//| output: false
-import { textcolor } from "@observablehq/text-color-annotations-in-markdown"
-```
-
-
-
-```{ojs}
-//| label: function-createPMTCTPlot
-//| output: false
-function createPMTCTPlot({
-  data,
-  x = "Period",
-  y = "percent",
-  fill = "Period",
-  fx = "category",
-  textLabel = (d) => d.percent
-}) {
-  return PlotNew.plot({
-    height: 850, // Set the desired height in pixels
-    x: { axis: null },
-    y: { axis: null, tickFormat: "s", grid: true },
-    style: {
-      fontSize: "20px" // Adjust this value as needed
-    },
-    marks: [
-      PlotNew.barY(data, {
-        x,
-        y,
-        fill,
-        fx,
-        sort: { x: null, fx: { reduce: "sum" } },
-        tip: true,
-        channels: { name: fx },
-        title: (d) => `${d[fx]}\nQuarter: ${d[x]}\nTotal: ${d[y]}`
-      }),
-      PlotNew.text(data, {
-        x,
-        y,
-        text: textLabel,
-        fx,
-        dx: 0,
-        dy: -8,
-        fontSize: 18,
-        fill: "black",
-        textAnchor: "middle",
-        fontWeight: "500"
-      }),
-      PlotNew.ruleY([0])
-    ],
-    color: {
-      legend: true,
-      domain: ["2025Q1", "2025Q2", "2025Q3", "2025Q4"],
-      range: ["#847dbb", "#B6DFD2", "#FCB715", "#b5b1d8"]
-    },
-    label: null,
-    width,
-    marginLeft: 50,
-    marginBottom: 60,
-    marginTop: 35
-  });
-}
-```
-
-
-
-```{ojs}
-//| label: Function to wrap long text labels
-//| output: false
-function wrapText(text, maxLength = 15) {
-  if (text.length <= maxLength) return text;
+<!-- <td style="padding: 10px; text-align: left; border: 1px solid #ddd; word-wrap: nowrap;">${d.Provincia}</td>
+<td style="padding: 10px; text-align: left; border: 1px solid #ddd; word-wrap: nowrap;">${d["Unidade Sanitaria"]}</td>
+<td style="padding: 10px; text-align: left; border: 1px solid #ddd; word-wrap: nowrap;">${d.Periodo}</td> -->
   
-  const words = text.split(" ");
-  let line1 = "";
-  let line2 = "";
-  
-  for (let i = 0; i < words.length; i++) {
-    if (line1.length + words[i].length + 1 <= maxLength) {
-      line1 += (line1 ? " " : "") + words[i];
-    } else {
-      line2 += (line2 ? " " : "") + words[i];
-    }
-  }
-  
-  return line1 + (line2 ? "\n" + line2 : "");
-}
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["N° de utentes esperados (CAD CPN)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["N° de utentes que vieram  durante o mês (CAD CPN)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["N° de utentes que faltaram as consultas durante o mês (CAD CPN)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Adherence assessments done (CAD CPN) | Numerator"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Adherence assessments done (CAD CPN) | Demoninator"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["% avaliação da adesão (CAD CPN)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Adherence assessments >80% adherent (CAD CPN) | Numerator"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Adherence assessments >80% adherent (CAD CPN) | Demoninator"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["% avaliação da adesão >80% aderentes (CAD CPN)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["HIV+ women on ART refill (CAD CPN) | Done"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["HIV+ women on ART refill (CAD CPN) | Due"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["% Levantamento de ARV (CAD CPN)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["VL load tests taken up (CAD CPN) | Done"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["VL load tests taken up (CAD CPN) | Due"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["% teste de CV feita (CAD CPN)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["VL load test result obtained (CAD CPN) | Done"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["VL load test result obtained (CAD CPN) | Due"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["% resultados de CV obtidos (CAD CPN)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["N° de utentes faltosos (CAD CPN)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["N° de utentes seguidos durante o mês (CAD CPN)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["% de utentes seguidos durante o mês (CAD CPN)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["N° de utentes contactados (CAD CPN)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["% de utentes contactados (CAD CPN)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["N° de utentes que retornaram a US (CAD CPN)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["% de utentes que retornaram a US (CAD CPN)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Total de Saídas do Programa (CAD CPN)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Alta (CAD CPN)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Referido (CAD CPN)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Transferido (CAD CPN)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Abandono (CAD CPN)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Óbito (CAD CPN)"]}</td>
+</tr>`)}
+</tbody>
+</table>
+`
 ```
 
+
+# Agenda ML
+
+## Column {width="100%"}
+
 ```{ojs}
-//| label: function-createRetentionPlot
-//| output: false
-function createRetentionPlot({
-  data,
-  x = "retention",
-  y = "percent",
-  fill = "retention",
-  fx = "Period",
-  textLabel = (d) => `${(d.percent * 100).toFixed(1)}%`,
-  colorDomain = [
-    "Pregnant women retention",
-    "Breatfeeding women retention",
-    "Children retention"
-  ],
-  colorRange = ["#847dbb", "#B6DFD2", "#FCB715"],
-}) {
-  return PlotNew.plot({
-  height: 650,
-    x: { axis: null },
-    y: { axis: null, tickFormat: "s", grid: true },
-    style: {
-      fontSize: "20px" // Adjust this value as needed
-    },
-    marks: [
-      PlotNew.barY(data, {
-        x,
-        y,
-        fill,
-        fx,
-        sort: { x: null, fx: { reduce: "sum" } },
-        tip: true,
-        channels: { name: fx },
-        title: (d) => `${d[fill]}\nQuarter: ${d[fx]}\nTotal: ${d[y]}`
-      }),
-      PlotNew.text(data, {
-        x,
-        y,
-        text: textLabel,
-        fx,
-        dx: 0,
-        dy: -8,
-        fontSize: 18,
-        fill: "black",
-        textAnchor: "middle",
-        fontWeight: "500"
-      }),
-      PlotNew.ruleY([0])
-    ],
-    color: {
-      legend: true,
-      domain: colorDomain,
-      range: colorRange
-    },
-    label: null,
-    width,
-    marginLeft: 50,
-    marginBottom: 60,
-    marginTop: 35
-  });
-}
+//| title: "Seguimento Mulher Lactante"
+html`
+<table style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 14px;">
+<thead>
+<tr>
+<th style="padding: 12px; text-align: left; border: 1px solid #ddd; white-space: nowrap;background-color: #B6DFD2;">Provincia</th>
+<th style="padding: 12px; text-align: left; border: 1px solid #ddd; white-space: nowrap;background-color: #B6DFD2;">Unidade Sanitaria</th>
+<th style="padding: 12px; text-align: left; border: 1px solid #ddd; white-space: nowrap;background-color: #B6DFD2;">Periodo</th>
+  
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #B6DFD2;">N° de utentes esperados (CAD CCR)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #B6DFD2;">N° de utentes que vieram  durante o mês (CAD CCR)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #B6DFD2;">N° de utentes que faltaram as consultas durante o mês (CAD CCR)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #B6DFD2;">Adherence assessments done (CAD CCR) | Numerator</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #B6DFD2;">Adherence assessments done (CAD CCR) | Demoninator</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #B6DFD2;">% avaliação da adesão (CAD CCR)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #B6DFD2;">Adherence assessments >80% adherent (CAD CCR) | Numerator</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #B6DFD2;">Adherence assessments >80% adherent (CAD CCR) | Demoninator</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #B6DFD2;">% avaliação da adesão >80% aderentes (CAD CCR)</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #B6DFD2;">1st PCR <2 months old (Child) | Done</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #B6DFD2;">1st PCR <2 months old (Child) | Due</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #B6DFD2;">% CE que receberam 1º PCR <2 meses (CAD CCR)</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #B6DFD2;">Result of PCR <2 months | Done</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #B6DFD2;">Result of PCR <2 months | Due</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #B6DFD2;">% CE com resultado do 1º PCR  < 2 meses (CAD CCR)</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #B6DFD2;">Rapid test 18 - 24 months | Done</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #B6DFD2;">Rapid test 18 - 24 months | Due</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #B6DFD2;">% Teste rápido 18 - 24 meses</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #B6DFD2;">Rapid test result 18 - 24 months | Done</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #B6DFD2;">Rapid test result 18 - 24 months | Due</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #B6DFD2;">% Resultado de teste rápido 18 - 24 meses</th>
+  
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #B6DFD2;">HIV+ women on ART refill (CAD CCR) | Done</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #B6DFD2;">HIV+ women on ART refill (CAD CCR) | Due</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #B6DFD2;">% Levantamento de ARV (CAD CCR)</th>
+  
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #B6DFD2;">VL load tests taken up (CAD CCR) | Done</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #B6DFD2;">VL load tests taken up (CAD CCR) | Due</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #B6DFD2;">% teste de CV feita (CAD CCR)</th>
+  
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #B6DFD2;">VL load test result obtained (CAD CCR) | Done</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #B6DFD2;">VL load test result obtained (CAD CCR) | Due</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #B6DFD2;">% resultados de CV obtidos (CAD CCR)</th>
+  
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #B6DFD2;">N° de utentes faltosos (CAD CCR)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #B6DFD2;">N° de utentes seguidos durante o mês (CAD CCR)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #B6DFD2;">% de utentes seguidos durante o mês (CAD CCR)</th>
+  
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #B6DFD2;">N° de utentes contactados (CAD CCR)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #B6DFD2;">% de utentes contactados (CAD CCR)</th>
+  
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #B6DFD2;">N° de utentes que retornaram a US (CAD CCR)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #B6DFD2;">% de utentes que retornaram a US (CAD CCR)</th>
+  
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #B6DFD2;">Total de Saídas do Programa (CAD CCR)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 100px; word-wrap: break-word;background-color: #B6DFD2;">Alta (CAD CCR)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 100px; word-wrap: break-word;background-color: #B6DFD2;">Referido (CAD CCR)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 100px; word-wrap: break-word;background-color: #B6DFD2;">Transferido (CAD CCR)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 100px; word-wrap: break-word;background-color: #B6DFD2;">Abandono (CAD CCR)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 100px; word-wrap: break-word;background-color: #B6DFD2;">Óbito (CAD CCR)</th>
+</tr>
+</thead>
+<tbody>
+${enrichedData.map((d, i) => html`<tr style="background-color: ${i % 2 === 0 ? '#f9f9f9' : 'white'};">
+
+<td style="padding: 10px; border: 1px solid #ddd; white-space: nowrap;">${d.Provincia}</td>
+<td style="padding: 10px; border: 1px solid #ddd; white-space: nowrap;">${d["Unidade Sanitaria"]}</td>
+<td style="padding: 10px; border: 1px solid #ddd; white-space: nowrap;">${d.Periodo}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["N° de utentes esperados (CAD CCR)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["N° de utentes que vieram  durante o mês (CAD CCR)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["N° de utentes que faltaram as consultas durante o mês (CAD CCR)"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Adherence assessments done (CAD CCR) | Numerator"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Adherence assessments done (CAD CCR) | Demoninator"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["% avaliação da adesão (CAD CCR)"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Adherence assessments >80% adherent (CAD CCR) | Numerator"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Adherence assessments >80% adherent (CAD CCR) | Demoninator"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["% avaliação da adesão >80% aderentes (CAD CCR)"]}</td>
+
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["1st PCR <2 months old (Child) | Done"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["1st PCR <2 months old (Child) | Due"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["% CE que receberam 1º PCR <2 meses (CAD CCR)"]}</td>
+
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Result of PCR <2 months | Done"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Result of PCR <2 months | Due"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["% CE com resultado do 1º PCR  < 2 meses (CAD CCR)"]}</td>
+
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Rapid test 18 - 24 months | Done"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Rapid test 18 - 24 months | Due"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["% Teste rápido 18 - 24 meses"]}</td>
+
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Rapid test result 18 - 24 months | Done"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Rapid test result 18 - 24 months | Due"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["% Resultado de teste rápido 18 - 24 meses"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["HIV+ women on ART refill (CAD CCR) | Done"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["HIV+ women on ART refill (CAD CCR) | Due"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["% Levantamento de ARV (CAD CCR)"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["VL load tests taken up (CAD CCR) | Done"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["VL load tests taken up (CAD CCR) | Due"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["% teste de CV feita (CAD CCR)"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["VL load test result obtained (CAD CCR) | Done"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["VL load test result obtained (CAD CCR) | Due"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["% resultados de CV obtidos (CAD CCR)"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["N° de utentes faltosos (CAD CCR)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["N° de utentes seguidos durante o mês (CAD CCR)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["% de utentes seguidos durante o mês (CAD CCR)"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["N° de utentes contactados (CAD CCR)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["% de utentes contactados (CAD CCR)"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["N° de utentes que retornaram a US (CAD CCR)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["% de utentes que retornaram a US (CAD CCR)"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Total de Saídas do Programa (CAD CCR)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Alta (CAD CCR)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Referido (CAD CCR)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Transferido (CAD CCR)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Abandono (CAD CCR)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Óbito (CAD CCR)"]}</td>
+</tr>`)}
+</tbody>
+</table>
+`
 ```
+
+
+# Agenda TARV Pediátrico
+
+## Column {width="100%"}
+
+```{ojs}
+//| title: "Seguimento TARV Pediátrico"
+html`
+<table style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 14px;">
+<thead>
+<tr>
+<th style="padding: 12px; text-align: left; border: 1px solid #ddd; white-space: nowrap;background-color: #c0e09f;">Provincia</th>
+<th style="padding: 12px; text-align: left; border: 1px solid #ddd; white-space: nowrap;background-color: #c0e09f;">Unidade Sanitaria</th>
+<th style="padding: 12px; text-align: left; border: 1px solid #ddd; white-space: nowrap;background-color: #c0e09f;">Periodo</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #c0e09f;">N° de crianças esperadas (CAD PED)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #c0e09f;">N° de crianças que vieram  durante o mês (CAD PED)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #c0e09f;">N° de crianças que faltaram as consultas durante o mês (CAD PED)</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #c0e09f;">Adherence assessments done | Numerator</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #c0e09f;">Adherence assessments done | Denominator</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #c0e09f;">% avaliação da adesão (CAD PED)</th>
+  
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #c0e09f;">Adherence assessments >80% adherent | Numerator</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #c0e09f;">Adherence assessments >80% adherent | Denominator</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #c0e09f;">% avaliação da adesão >80% aderentes (CAD PED)</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #c0e09f;">Children ART refill - 1 month | Done</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #c0e09f;">Children ART refill - 1 month | Due</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #c0e09f;">% Levantamento de ARV (CAD PED)</th>
+
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #c0e09f;">Children Viral load test | Done</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #c0e09f;">Children Viral load test | Due</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #c0e09f;">% teste de CV feita (CAD PED)</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #c0e09f;">Children Viral load test result | Done</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #c0e09f;">Children Viral load test result | Due</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #c0e09f;">% resultados de CV obtidos (CAD PED)</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #c0e09f;">N° de crianças faltosas (CAD PED)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #c0e09f;">N° de crianças seguidas durante o mês (CAD PED)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #c0e09f;">% de crianças seguidas durante o mês (CAD PED)</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #c0e09f;">N° de crianças contactadas (CAD PED)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #c0e09f;">% de crianças contactadas (CAD PED)</th>
+  
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #c0e09f;">N° de crianças que retornaram a US (CAD PED)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #c0e09f;">% de crianças que retornaram a US (CAD PED)</th>
+  
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #c0e09f;">Total de Saídas do Programa (CAD PED)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 100px; word-wrap: break-word;background-color: #c0e09f;">Alta (CAD PED)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 100px; word-wrap: break-word;background-color: #c0e09f;">Referido (CAD PED)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 100px; word-wrap: break-word;background-color: #c0e09f;">Transferido (CAD PED)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 100px; word-wrap: break-word;background-color: #c0e09f;">Abandono (CAD PED)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 100px; word-wrap: break-word;background-color: #c0e09f;">Óbito (CAD PED)</th>
+</tr>
+</thead>
+<tbody>
+${enrichedData.map((d, i) => html`<tr style="background-color: ${i % 2 === 0 ? '#f9f9f9' : 'white'};">
+
+<td style="padding: 10px; border: 1px solid #ddd; white-space: nowrap;">${d.Provincia}</td>
+<td style="padding: 10px; border: 1px solid #ddd; white-space: nowrap;">${d["Unidade Sanitaria"]}</td>
+<td style="padding: 10px; border: 1px solid #ddd; white-space: nowrap;">${d.Periodo}</td>
+
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["N° de crianças esperadas (CAD PED)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["N° de crianças que vieram  durante o mês (CAD PED)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["N° de crianças que faltaram as consultas durante o mês (CAD PED)"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Adherence assessments done | Numerator"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Adherence assessments done | Denominator"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["% avaliação da adesão (CAD PED)"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Adherence assessments >80% adherent | Numerator"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Adherence assessments >80% adherent | Denominator"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["% avaliação da adesão >80% aderentes (CAD PED)"]}</td>
+
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Children ART refill - 1 month | Done"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Children ART refill - 1 month | Due"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["% Levantamento de ARV (CAD PED)"]}</td>
+ 
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Children Viral load test | Done"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Children Viral load test | Due"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["% teste de CV feita (CAD PED)"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Children Viral load test result | Done"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Children Viral load test result | Due"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["% resultados de CV obtidos (CAD PED)"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["N° de crianças faltosas (CAD PED)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["N° de crianças seguidas durante o mês (CAD PED)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["% de crianças seguidas durante o mês (CAD PED)"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["N° de crianças contactadas (CAD PED)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["% de crianças contactadas (CAD PED)"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["N° de crianças que retornaram a US (CAD PED)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["% de crianças que retornaram a US (CAD PED)"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Total de Saídas do Programa (CAD PED)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Alta (CAD PED)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Referido (CAD PED)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Transferido (CAD PED)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Abandono (CAD PED)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Óbito (CAD PED)"]}</td>
+</tr>`)}
+</tbody>
+</table>
+
+`
+```
+
+
+
+
+# MG na 1ª CPN
+
+## Column {width="100%"}
+
+```{ojs}
+//| title: "Mulheres Grávidas na 1ª CPN"
+html`
+<table style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 14px;">
+<thead>
+<tr>
+<th style="padding: 12px; text-align: left; border: 1px solid #ddd; white-space: nowrap; background-color: #66ffff">Provincia</th>
+<th style="padding: 12px; text-align: left; border: 1px solid #ddd; white-space: nowrap;background-color: #66ffff">Unidade Sanitaria</th>
+<th style="padding: 12px; text-align: left; border: 1px solid #ddd; white-space: nowrap;background-color: #66ffff">Periodo</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #66ffff">Mulheres grávidas na 1ª CPN</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #66ffff">Mulheres elegiveis ao teste na 1ª CPN</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #66ffff">Mulheres grávidas testados para HIV na 1ª CPN</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #66ffff">% mulheres grávidas testados para HIV na 1ª CPN</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #66ffff">Numero de mulheres HIV positivas a entrada (MFR)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #66ffff">Total de mulheres testadas HIV pela 1ª vez no sector</th>
+  
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #66ffff">Positividade na CPN</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #66ffff">Total de mulheres grávidas HIV+ na 1ª CPN</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #66ffff">Numero de mulheres testadas HIV positivo na CPN (MFR)</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #66ffff">Numero de mulheres HIV positivas que iniciaram TARV na CPN</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #66ffff">Cobertura TARV na CPN</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #66ffff">Novas grávidas HIV+ inscritas no programa</th>
+
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #66ffff">Ligacao na CPN</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #66ffff">Numero de utentes que colheram amostra para teste de CV na CPN</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #66ffff">Numero de utentes com resultados de CV na CPN</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #66ffff">Numero de utentes com CV suprimida na CPN</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #66ffff">% de utentes com CV suprimida na CPN</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #66ffff">Novas gravidas vistas pela mãe mentora da comunidade</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #66ffff">Numero de utentes que receberam serviço via telefone na CPN</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #66ffff">Novas gravidas HIV+ a entrada inscritas na CPN durante o mês (FSS)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #66ffff">Novas gravidas HIV+ testadas na CPN durante o mês (FSS)</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #66ffff">Grávidas HIV+ esperadas na CPN (CAD)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #66ffff">Novos Parceiros, Homens na CPN</th>
+  
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #66ffff">Novos Parceiros HIV positivos na CPN</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word;background-color: #66ffff">Novos Parceiros HIV positivo em TARV na CPN</th>
+  
+</tr>
+</thead>
+<tbody>
+${enrichedData.map((d, i) => html`<tr style="background-color: ${i % 2 === 0 ? '#f9f9f9' : 'white'};">
+
+<td style="padding: 10px; border: 1px solid #ddd; white-space: nowrap;">${d.Provincia}</td>
+<td style="padding: 10px; border: 1px solid #ddd; white-space: nowrap;">${d["Unidade Sanitaria"]}</td>
+<td style="padding: 10px; border: 1px solid #ddd; white-space: nowrap;">${d.Periodo}</td>
+
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Mulheres grávidas na 1ª CPN"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Mulheres elegiveis ao teste na 1ª CPN"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Mulheres grávidas testados para HIV na 1ª CPN"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["% mulheres grávidas testados para HIV na 1ª CPN"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Numero de mulheres HIV positivas a entrada (MFR)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Total de mulheres testadas HIV pela 1ª vez no sector"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Positividade na CPN"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Total de mulheres grávidas HIV+ na 1ª CPN"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Numero de mulheres testadas HIV positivo na CPN (MFR)"]}</td>
+
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Numero de mulheres HIV positivas que iniciaram TARV na CPN"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Cobertura TARV na CPN"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Novas grávidas HIV+ inscritas no programa"]}</td>
+ 
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Ligacao na CPN"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Numero de utentes que colheram amostra para teste de CV na CPN"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Numero de utentes com resultados de CV na CPN"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Numero de utentes com CV suprimida na CPN"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["% de utentes com CV suprimida na CPN"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Novas gravidas vistas pela mãe mentora da comunidade"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Numero de utentes que receberam serviço via telefone na CPN"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Novas gravidas HIV+ a entrada inscritas na CPN durante o mês (FSS)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Novas gravidas HIV+ testadas na CPN durante o mês (FSS)"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Grávidas HIV+ esperadas na CPN (CAD)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Novos Parceiros, Homens na CPN"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Novos Parceiros HIV positivos na CPN"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Novos Parceiros HIV positivo em TARV na CPN"]}</td>
+  
+</tr>`)}
+</tbody>
+</table>
+
+`
+```
+
+
+# ML na 1ª CCR
+
+## Column {width="100%"}
+
+```{ojs}
+//| title: "Mulheres Lactantes na 1ª CCR"
+html`
+<table style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 14px;">
+<thead>
+<tr>
+<th style="padding: 12px; text-align: left; border: 1px solid #ddd; white-space: nowrap; background-color: #ffcc33">Provincia</th>
+<th style="padding: 12px; text-align: left; border: 1px solid #ddd; white-space: nowrap; background-color: #ffcc33">Unidade Sanitaria</th>
+<th style="padding: 12px; text-align: left; border: 1px solid #ddd; white-space: nowrap; background-color: #ffcc33">Periodo</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #ffcc33">Total de 1ª Consultas na CCR</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #ffcc33">Numero de mulheres HIV positivas a entrada na CCR</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #ffcc33">Total de mulheres testadas HIV pela 1ª vez na CCR</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #ffcc33">Numero de mulheres testadas HIV positivo na CCR</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #ffcc33">Numero total de novas mulheres HIV positivas na CCR</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #ffcc33">Numero de mulheres HIV positivas que iniciaram TARV na CCR</th>
+  
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #ffcc33">Numero de mulheres que testaram HIV POSITIVO NA CONSULTA POS-PARTO</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #ffcc33">Numero de mulheres que testaram HIV POSITIVO NA CONSULTA DE CRIANÇAS SADIA</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #ffcc33">Numero de mulheres que testaram HIV POSITIVO NA MATERNIDADE</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #ffcc33">Mulheres que foram dispensadas ARVs na Maternidade</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #ffcc33">Numero de Crianças que nasceram de Mães HIV positivas que receberam profilxia com ARVs</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #ffcc33">Número de Nados vivos de Mães HIV positivas</th>
+
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #ffcc33">Numero de mulheres HIV positivas que fizeram teste de CV</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #ffcc33">Numero de mulheres HIV positivas que tiveram resultado de CV</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #ffcc33">Novas lactantes HIV+ inscritas no programa</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #ffcc33">Novas lactantes HIV+ iniciaram TARV</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #ffcc33">Ligacao na CCR</th>
+  
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #ffcc33">Numero de utentes que colheram amostra para teste de CV na CCR</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #ffcc33">Numero de utentes com resultados de CV na CCR</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #ffcc33">Numero de utentes com CV suprimida na CCR</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #ffcc33">% de utentes com CV suprimida na CCR</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #ffcc33">Novas lactantes vistas pela mãe mentora da comunidade</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #ffcc33">Numero de utentes que receberam serviço via telefone na CCR</th>
+  
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #ffcc33">Novas lactantes HIV+ a entrada inscritas na CCR durante o mês</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #ffcc33">Novas lactantes HIV+ testadas na CPN durante o mês</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #ffcc33">Lactantes HIV+ esperadas na CCR</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #ffcc33">Novos Parceiros, Homens na CCR</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #ffcc33">Novos Parceiros HIV positivos na CCR</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #ffcc33">Novos Parceiros HIV positivo em TARV na CCR</th>
+  
+</tr>
+</thead>
+<tbody>
+${enrichedData.map((d, i) => html`<tr style="background-color: ${i % 2 === 0 ? '#f9f9f9' : 'white'};">
+
+<td style="padding: 10px; border: 1px solid #ddd; white-space: nowrap;">${d.Provincia}</td>
+<td style="padding: 10px; border: 1px solid #ddd; white-space: nowrap;">${d["Unidade Sanitaria"]}</td>
+<td style="padding: 10px; border: 1px solid #ddd; white-space: nowrap;">${d.Periodo}</td>
+
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Total de 1ª Consultas na CCR"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Numero de mulheres HIV positivas a entrada na CCR"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Total de mulheres testadas HIV pela 1ª vez na CCR"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Numero de mulheres testadas HIV positivo na CCR"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Numero total de novas mulheres HIV positivas na CCR"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Numero de mulheres HIV positivas que iniciaram TARV na CCR"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Numero de mulheres que testaram HIV POSITIVO NA CONSULTA POS-PARTO"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Numero de mulheres que testaram HIV POSITIVO NA CONSULTA DE CRIANÇAS SADIA"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Numero de mulheres que testaram HIV POSITIVO NA MATERNIDADE"]}</td>
+
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Mulheres que foram dispensadas ARVs na Maternidade"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Numero de Crianças que nasceram de Mães HIV positivas que receberam profilxia com ARVs"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de Nados vivos de Mães HIV positivas"]}</td>
+ 
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Numero de mulheres HIV positivas que fizeram teste de CV"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Numero de mulheres HIV positivas que tiveram resultado de CV"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Novas lactantes HIV+ inscritas no programa"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Novas lactantes HIV+ iniciaram TARV"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Ligacao na CCR"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Numero de utentes que colheram amostra para teste de CV na CCR"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Numero de utentes com resultados de CV na CCR"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Numero de utentes com CV suprimida na CCR"]}</td>
+
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["% de utentes com CV suprimida na CCR"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Novas lactantes vistas pela mãe mentora da comunidade"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Numero de utentes que receberam serviço via telefone na CCR"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Novas lactantes HIV+ a entrada inscritas na CCR durante o mês"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Novas lactantes HIV+ testadas na CPN durante o mês"]}</td>
+
+
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Lactantes HIV+ esperadas na CCR"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Novos Parceiros, Homens na CCR"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Novos Parceiros HIV positivos na CCR"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Novos Parceiros HIV positivo em TARV na CCR"]}</td>
+  
+</tr>`)}
+</tbody>
+</table>
+
+`
+```
+
+
+# Crianças Expostas
+
+## Column {width="100%"}
+
+```{ojs}
+//| title: "Crianças Expostas"
+html`
+
+<table style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 14px;">
+<thead>
+<tr>
+<th style="padding: 12px; text-align: left; border: 1px solid #ddd; white-space: nowrap; background-color: #00ccff">Provincia</th>
+<th style="padding: 12px; text-align: left; border: 1px solid #ddd; white-space: nowrap; background-color: #00ccff">Unidade Sanitaria</th>
+<th style="padding: 12px; text-align: left; border: 1px solid #ddd; white-space: nowrap; background-color: #00ccff">Periodo</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">Crianças expostas ao HIV</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">Crianças expostas ao HIV (<2 meses)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">Crianças expostas ao HIV (2 - 12 meses)</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">Crianças expostas ao HIV (12 - 18 meses)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">1º teste de PCR colhido</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">1º teste de PCR colhido (<2 meses)</th>
+  
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">1º teste de PCR colhido (2-12 meses)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">1º teste de PCR colhido (12-18 meses)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">Crianças com teste de HIV+</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">Crianças com teste de HIV+ (< 2 meses)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">Crianças com teste de HIV+ (2-12 meses)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">Crianças com teste de HIV+ (0-12 Months)</th>
+
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">Crianças com teste de HIV+ (12-18 meses)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">Positividade CCR</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">Positividade (< 2 meses)</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">Número de crianças testadas HIV positivas < 2 meses</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">Numero de Crianças testadas com PCR < 2 meses</th>
+  
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">Positividade (2 - 12 meses)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">Número de crianças testadas HIV positivas 2 - 12 meses</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">Numero de Crianças testadas com PCR 2 - 12 meses</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">Positividade (12 - 18 meses)</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">Número de crianças testadas HIV positivas 12 - 18 meses</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">Numero de Crianças testadas com PCR 12 - 18 meses</th>
+  
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">Crianças com HIV+ em TARV</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">Crianças com HIV+ em TARV (< 2 meses)</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">Crianças com HIV+ em TARV (2 - 12 meses)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">Crianças com HIV+ em TARV (12 - 18 meses)</th>
+  
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">Cobertura TARV CCR</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">Cobertura TARV (< 2 meses)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">Cobertura TARV (2 - 12 meses)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">Cobertura TARV (12 - 18 meses)</th>
+  
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">Número de crianças com TESTE DE CONFIRMAÇÃO POSITIVO PCR+ (< 2 meses)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">Número de crianças com TESTE DE CONFIRMAÇÃO POSITIVO PCR+ 2 - 12 meses</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">Número de crianças com TESTE DE CONFIRMAÇÃO POSITIVO TR ≤ 9 meses</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">Número de crianças com TESTE DE CONFIRMAÇÃO POSITIVO PCR ≥12- 17 meses</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">Número de crianças com TESTE DE CONFIRMAÇÃO POSITIVO TR 18 - 24 meses</th>
+  
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">Número de crianças que fizeram o teste rápido TR ≤ 9 meses</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">Número de crianças que fizeram o teste rápido PCR ≥12- 17 meses</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">Número de crianças que fizeram o teste rápido TR 18 - 24 meses</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">Número de crianças que fizeram o teste rápido com resultado positivo TR ≥ 9 meses</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">Número de crianças que fizeram o teste rápido com resultado positivo TR 18 - 24 meses</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">Número de crianças que fizeram o teste rápido positivo iniciaram TARV TR ≤ 9 meses</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">Número de crianças que fizeram o teste rápido positivo iniciaram TARV TR 12- 17 meses</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #00ccff">Número de crianças que fizeram o teste rápido positivo iniciaram TARV TR 18 - 24 meses</th>
+  
+</tr>
+</thead>
+<tbody>
+${enrichedData.map((d, i) => html`<tr style="background-color: ${i % 2 === 0 ? '#f9f9f9' : 'white'};">
+
+<td style="padding: 10px; border: 1px solid #ddd; white-space: nowrap;">${d.Provincia}</td>
+<td style="padding: 10px; border: 1px solid #ddd; white-space: nowrap;">${d["Unidade Sanitaria"]}</td>
+<td style="padding: 10px; border: 1px solid #ddd; white-space: nowrap;">${d.Periodo}</td>
+
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Crianças expostas ao HIV"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Crianças expostas ao HIV (<2 meses)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Crianças expostas ao HIV (2 - 12 meses)"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Crianças expostas ao HIV (12 - 18 meses)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["1º teste de PCR colhido"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["1º teste de PCR colhido (<2 meses)"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["1º teste de PCR colhido (2-12 meses)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["1º teste de PCR colhido (12-18 meses)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Crianças com teste de HIV+"]}</td>
+
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Crianças com teste de HIV+ (< 2 meses)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Crianças com teste de HIV+ (2-12 meses)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Crianças com teste de HIV+ (0-12 Months)"]}</td>
+ 
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Crianças com teste de HIV+ (12-18 meses)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Positividade CCR"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Positividade (< 2 meses)"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de crianças testadas HIV positivas < 2 meses"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Numero de Crianças testadas com PCR < 2 meses"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Positividade (2 - 12 meses)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de crianças testadas HIV positivas 2 - 12 meses"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Numero de Crianças testadas com PCR 2 - 12 meses"]}</td>
+
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Positividade (12 - 18 meses)"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de crianças testadas HIV positivas 12 - 18 meses"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Numero de Crianças testadas com PCR 12 - 18 meses"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Crianças com HIV+ em TARV"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Crianças com HIV+ em TARV (< 2 meses)"]}</td>
+
+
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Crianças com HIV+ em TARV (2 - 12 meses)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Crianças com HIV+ em TARV (12 - 18 meses)"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Cobertura TARV CCR"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Cobertura TARV (< 2 meses)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Cobertura TARV (2 - 12 meses)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Cobertura TARV (12 - 18 meses)"]}</td>
+
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de crianças com TESTE DE CONFIRMAÇÃO POSITIVO PCR+ (< 2 meses)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de crianças com TESTE DE CONFIRMAÇÃO POSITIVO PCR+ 2 - 12 meses"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de crianças com TESTE DE CONFIRMAÇÃO POSITIVO TR ≤ 9 meses"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de crianças com TESTE DE CONFIRMAÇÃO POSITIVO PCR ≥12- 17 meses"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de crianças com TESTE DE CONFIRMAÇÃO POSITIVO TR 18 - 24 meses"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de crianças que fizeram o teste rápido TR ≤ 9 meses"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de crianças que fizeram o teste rápido PCR ≥12- 17 meses"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de crianças que fizeram o teste rápido TR 18 - 24 meses"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de crianças que fizeram o teste rápido com resultado positivo TR ≥ 9 meses"]}</td>
+
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de crianças que fizeram o teste rápido com resultado positivo TR 18 - 24 meses"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de crianças que fizeram o teste rápido positivo iniciaram TARV TR ≤ 9 meses"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de crianças que fizeram o teste rápido positivo iniciaram TARV TR 12- 17 meses"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de crianças que fizeram o teste rápido positivo iniciaram TARV TR 18 - 24 meses"]}</td>
+  
+</tr>`)}
+</tbody>
+</table>
+
+`
+```
+
+
+# TARV Pediátrico
+
+## Column {width="100%"}
+
+```{ojs}
+//| title: "Crianças em TARV Pediátrico"
+html`
+
+<table style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 14px;">
+<thead>
+<tr>
+<th style="padding: 12px; text-align: left; border: 1px solid #ddd; white-space: nowrap; background-color: #F5A799">Provincia</th>
+<th style="padding: 12px; text-align: left; border: 1px solid #ddd; white-space: nowrap; background-color: #F5A799">Unidade Sanitaria</th>
+<th style="padding: 12px; text-align: left; border: 1px solid #ddd; white-space: nowrap; background-color: #F5A799">Periodo</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #F5A799">Numero de novas crianças inscritas no TARV</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #F5A799">Numero de crianças em seguimento no TARV</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #F5A799">Numero de crianças vistas pela MM da Comunidade</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #F5A799">Numero de criançãs que colheram amostra de CV</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #F5A799">Numero de crianças com resultado de CV</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #F5A799">Numero de crianças com resultado de CV suprimida</th>
+  
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #F5A799">% de crianças com resultado de CV suprimida</th>
+
+  
+</tr>
+</thead>
+<tbody>
+${enrichedData.map((d, i) => html`<tr style="background-color: ${i % 2 === 0 ? '#f9f9f9' : 'white'};">
+
+<td style="padding: 10px; border: 1px solid #ddd; white-space: nowrap;">${d.Provincia}</td>
+<td style="padding: 10px; border: 1px solid #ddd; white-space: nowrap;">${d["Unidade Sanitaria"]}</td>
+<td style="padding: 10px; border: 1px solid #ddd; white-space: nowrap;">${d.Periodo}</td>
+
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Numero de novas crianças inscritas no TARV"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Numero de crianças em seguimento no TARV"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Numero de crianças vistas pela MM da Comunidade"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Numero de criançãs que colheram amostra de CV"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Numero de crianças com resultado de CV"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Numero de crianças com resultado de CV suprimida"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["% de crianças com resultado de CV suprimida"]}</td>
+
+  
+</tr>`)}
+</tbody>
+</table>
+
+`
+```
+
+
+
+# Mulheres Negativas
+
+## Column {width="100%"}
+
+```{ojs}
+//| title: "Seguimento de Mulheres Gravidas Negativas"
+html`
+
+<table style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 14px;">
+<thead>
+<tr>
+<th style="padding: 12px; text-align: left; border: 1px solid #ddd; white-space: nowrap; background-color: #847dbb">Provincia</th>
+<th style="padding: 12px; text-align: left; border: 1px solid #ddd; white-space: nowrap; background-color: #847dbb">Unidade Sanitaria</th>
+<th style="padding: 12px; text-align: left; border: 1px solid #ddd; white-space: nowrap; background-color: #847dbb">Periodo</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Número de Mulheres gravidas inscritas</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Número de Mulheres lactantes inscritas</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Novas MG/ML inscritas</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Número de Mulheres que iniciaram o PrEP (Gravidas e Lactantes)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Mulheres em seguimento na US</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Mulheres em seguimento na US&Comunidade</th>
+  
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Mulheres em seguimento via chamada</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Número de  MG/ML que fizeram teste de SIFILIS</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Número de  MG/ML com teste de SIFILIS Positivo</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Número de  MG/ML que fizeram tratamento de SIFILIS</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Número de parceiros que fizeram tratamento de SIFILIS</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Número de Mulheres Grávidas com criterios de retestagem</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Número de MG RETESTADOS</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Número de MG RETESTADOS com resultado HIV NEGATIVO</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Número de  MG RETESTADOS com resultado HIV POSITIVO</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Número  MG com resultado POSITIVO na retestagem iniciaram TARV</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Número de Mulheres Lactantes com criterios de retestagem</th>
+  
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Número de  ML RETESTADOS</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Número de  ML RETESTADOS com resultado HIV NEGATIVO</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Número de  ML RETESTADOS com resultado HIV POSITIVO</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Número  ML com resultado POSITIVO na retestagem iniciaram TARV</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Número de MG/ML com criterios da  SEGUNDA retestagem</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Numero de MG/ML retestadas</th>
+  
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Número TOTAL de MG/ML com resultado POSITIVO na SEGUNDA retestagem</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Número TOTAL de MG/ML com criterios da  TERCEIRA retestagem</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Número de MG/ML com resultado POSITIVO na TERCEIRA retestagem</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Número TOTAL de MG/ML com resultado POSITIVO na SEGUNDA e TERCEIRA retestagem que iniciaram o TARV</th>
+  
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Número de MG/ML que receberam  aconselhamento do PrEP durante o mês(Novas e Seguintes)</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Número de MG/ML que Receberam aconselhamento do uso de Preservativos</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Número de MG/ML que receberam aconselhamento para adesao ao PrEP preservativos</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Número de NOVAS utentes vistas pela Mãe Mentora da Comunidade</th>
+  
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Número de utentes em SEGUIMENTOS vistas pela Mãe Mentora da Comunidade</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Número total de parceiros em TARV</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Número de parceiros a serem seguidos pela MM</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Número de parceiros ligados a HOMEM CAMPEÃO</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Número de parceiros que recebeu Prevençao Positiva</th>
+  
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Número de parceiros elegiveis a colheita de CARGA VIRAL</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Número de parceiros que colheram CARGA VIRAL</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Número de parceiro com  resultado de CARGA VIRAL</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Número de parceiros com CARGA VIRAL INDETECTAVEL</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">HIV Positivo</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">ALTA no sector</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Obitos</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Desistências</th>
+
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Divorcio/Separação</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Transferidos</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Referidos para outro Sector</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Suspenso PrEP pelo clinico</th>
+<th style="padding: 12px; text-align: center; border: 1px solid #ddd; max-width: 120px; word-wrap: break-word; background-color: #847dbb">Total de saidas</th>
+  
+</tr>
+</thead>
+<tbody>
+${enrichedData.map((d, i) => html`<tr style="background-color: ${i % 2 === 0 ? '#f9f9f9' : 'white'};">
+
+<td style="padding: 10px; border: 1px solid #ddd; white-space: nowrap;">${d.Provincia}</td>
+<td style="padding: 10px; border: 1px solid #ddd; white-space: nowrap;">${d["Unidade Sanitaria"]}</td>
+<td style="padding: 10px; border: 1px solid #ddd; white-space: nowrap;">${d.Periodo}</td>
+
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de Mulheres gravidas inscritas"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de Mulheres lactantes inscritas"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Novas MG/ML inscritas"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de Mulheres que iniciaram o PrEP (Gravidas e Lactantes)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Mulheres em seguimento na US"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Mulheres em seguimento na US&Comunidade"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Mulheres em seguimento via chamada"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de  MG/ML que fizeram teste de SIFILIS"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de  MG/ML com teste de SIFILIS Positivo"]}</td>
+
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de  MG/ML que fizeram tratamento de SIFILIS"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de parceiros que fizeram tratamento de SIFILIS"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de Mulheres Grávidas com criterios de retestagem"]}</td>
+ 
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de MG RETESTADOS"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de MG RETESTADOS com resultado HIV NEGATIVO"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de  MG RETESTADOS com resultado HIV POSITIVO"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número  MG com resultado POSITIVO na retestagem iniciaram TARV"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de Mulheres Lactantes com criterios de retestagem"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de  ML RETESTADOS"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de  ML RETESTADOS com resultado HIV NEGATIVO"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de  ML RETESTADOS com resultado HIV POSITIVO"]}</td>
+
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número  ML com resultado POSITIVO na retestagem iniciaram TARV"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de MG/ML com criterios da  SEGUNDA retestagem"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Numero de MG/ML retestadas"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número TOTAL de MG/ML com resultado POSITIVO na SEGUNDA retestagem"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número TOTAL de MG/ML com criterios da  TERCEIRA retestagem"]}</td>
+
+
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de MG/ML com resultado POSITIVO na TERCEIRA retestagem"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número TOTAL de MG/ML com resultado POSITIVO na SEGUNDA e TERCEIRA retestagem que iniciaram o TARV"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de MG/ML que receberam  aconselhamento do PrEP durante o mês(Novas e Seguintes)"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de MG/ML que Receberam aconselhamento do uso de Preservativos"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de MG/ML que receberam aconselhamento para adesao ao PrEP preservativos"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de NOVAS utentes vistas pela Mãe Mentora da Comunidade"]}</td>
+
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de utentes em SEGUIMENTOS vistas pela Mãe Mentora da Comunidade"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número total de parceiros em TARV"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de parceiros a serem seguidos pela MM"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de parceiros ligados a HOMEM CAMPEÃO"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de parceiros que recebeu Prevençao Positiva"]}</td>
+  
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de parceiros elegiveis a colheita de CARGA VIRAL"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de parceiros que colheram CARGA VIRAL"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de parceiro com  resultado de CARGA VIRAL"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Número de parceiros com CARGA VIRAL INDETECTAVEL"]}</td>
+
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["HIV Positivo"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["ALTA no sector"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Obitos"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Desistências"]}</td>
+
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Divorcio/Separação"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Transferidos"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Referidos para outro Sector"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Suspenso PrEP pelo clinico"]}</td>
+<td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${d["Total de saidas"]}</td>
+</tr>`)}
+</tbody>
+</table>
+
+
+`
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

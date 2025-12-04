@@ -22,7 +22,9 @@ $hover-color: lighten($link-color, 40%);
 
 /*-- scss:rules --*/
 .card-header {
-  background-color: #F0F0F0;
+  background-color: #59C1A5;
+  font-size: 120%;
+  color: white;
 }
 
 .nav-item > a:hover {
