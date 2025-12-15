@@ -1264,7 +1264,8 @@ Plot.plot({
       "Julho 2025",
       "Agosto 2025",
       "Setembro 2025",
-      "Outubro 2025"
+      "Outubro 2025",
+      "Novembro 2025"
     ],
     range: [
       "#524FA1",
@@ -1275,8 +1276,9 @@ Plot.plot({
       "#ffcf71",
       "#ffe3af",
       "#59C1A5",
-      "#B6DFD2",
-      "#F5A799"
+      "#79ccb3",
+      "#96d6c2",
+      "#b1e1d1"
     ]
   },
   label: null,
@@ -1334,7 +1336,8 @@ Plot.plot({
       "Julho 2025",
       "Agosto 2025",
       "Setembro 2025",
-      "Outubro 2025"
+      "Outubro 2025",
+      "Novembro 2025"
     ],
     range: [
       "#524FA1",
@@ -1345,8 +1348,9 @@ Plot.plot({
       "#ffcf71",
       "#ffe3af",
       "#59C1A5",
-      "#B6DFD2",
-      "#F5A799"
+      "#79ccb3",
+      "#96d6c2",
+      "#b1e1d1"
     ]
   },
   fx: {
@@ -1456,7 +1460,8 @@ Plot.plot({
       "Julho 2025",
       "Agosto 2025",
       "Setembro 2025",
-      "Outubro 2025"
+      "Outubro 2025",
+      "Novembro 2025"
     ],
     range: [
       "#524FA1",
@@ -1467,8 +1472,9 @@ Plot.plot({
       "#ffcf71",
       "#ffe3af",
       "#59C1A5",
-      "#B6DFD2",
-      "#F5A799"
+      "#79ccb3",
+      "#96d6c2",
+      "#b1e1d1"
     ]
   },
   fx: {
