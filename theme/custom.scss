@@ -84,7 +84,20 @@ body {
 
 
 
-
+h3 {
+  background-color: #524FA1;
+  color: white;
+  padding: 12px 18px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  
+  &::before {
+    content: "📊 ";
+    margin-right: 8px;
+  }
+}
 
 
 
