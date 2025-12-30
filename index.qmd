@@ -26,11 +26,14 @@ library(gt)
 PlotNew = require("@observablehq/plot")
 
 // upload data
-data_month_qrt = FileAttachment("data/final/month_quarter_tbl.csv").csv({typed: true})
+data_month_qrt = FileAttachment("data/final/month_quarter_province_tbl.csv").csv({typed: true})
 
 data_mo_tbl = aq.from(filteredMonth)
 
 data_qrt_tbl = aq.from(filteredQuarter)
+
+data_prov_tbl = aq.from(filterbyProvincia)
+
 
 data_longer_mo_tbl = data_mo_tbl
   .select(
@@ -51,6 +54,24 @@ data_longer_mo_tbl = data_mo_tbl
   
   
 data_longer_qrt_tbl = data_qrt_tbl
+  .select(
+    "Provincia",
+    "Unidade Sanitaria",
+    "Periodo",
+    "Mulheres grávidas na 1ª CPN",
+    "Mulheres grávidas testados para HIV na 1ª CPN",
+    "Total de mulheres grávidas HIV+ na 1ª CPN",
+    "Numero de mulheres HIV positivas a entrada (MFR)",
+    "Numero de mulheres testadas HIV positivo na CPN (MFR)",
+    "Numero de mulheres HIV positivas que iniciaram TARV na CPN"
+  )
+  .fold(aq.not("Provincia", "Unidade Sanitaria", "Periodo"), {
+    as: ["category", "percent"]
+  }) // unpivot/fold the data
+  .objects()
+  
+  
+data_longer_prov_tbl = data_prov_tbl
   .select(
     "Provincia",
     "Unidade Sanitaria",
@@ -125,6 +146,35 @@ data_eid_qrt_longer_tbl = data_qrt_tbl
   .objects()
   
 
+data_eid_prov_longer_tbl = data_prov_tbl
+  .select(
+    "Provincia",
+    "Unidade Sanitaria",
+    "Periodo",
+    // "Crianças expostas ao HIV",
+    // "Crianças expostas ao HIV (<2 meses)",
+    // "Crianças expostas ao HIV (2 - 12 meses)",
+    // "Crianças expostas ao HIV (12 - 18 meses)",
+    "1º teste de PCR colhido",
+    "1º teste de PCR colhido (<2 meses)",
+    "1º teste de PCR colhido (2-12 meses)",
+    "1º teste de PCR colhido (12-18 meses)",
+    "Crianças com teste de HIV+",
+    "Crianças com teste de HIV+ (< 2 meses)",
+    "Crianças com teste de HIV+ (2-12 meses)",
+    "Crianças com teste de HIV+ (0-12 Months)",
+    "Crianças com teste de HIV+ (12-18 meses)",
+    "Crianças com HIV+ em TARV",
+    "Crianças com HIV+ em TARV (< 2 meses)",
+    "Crianças com HIV+ em TARV (2 - 12 meses)",
+    "Crianças com HIV+ em TARV (12 - 18 meses)"
+  )
+  .fold(aq.not("Provincia", "Unidade Sanitaria", "Periodo"), {
+    as: ["category", "percent"]
+  }) // unpivot/fold the data
+  .objects()
+  
+
 data_suppression_mo_tbl = data_mo_tbl
   .select(
     "Provincia",
@@ -142,6 +192,23 @@ data_suppression_mo_tbl = data_mo_tbl
   .objects()
   
 data_suppression_qrt_tbl = data_qrt_tbl
+  .select(
+    "Provincia",
+    "Unidade Sanitaria",
+    "Periodo",
+    "Ligacao na CPN",
+    "% de utentes com CV suprimida na CPN",
+    "Ligacao na CCR",
+    "% de utentes com CV suprimida na CCR",
+    "% de crianças com resultado de CV suprimida"
+  )
+  .fold(aq.not("Provincia", "Unidade Sanitaria", "Periodo"), {
+    as: ["category", "percent"]
+  }) // unpivot/fold the data
+  .objects()
+
+
+data_suppression_prov_tbl = data_prov_tbl
   .select(
     "Provincia",
     "Unidade Sanitaria",
@@ -197,6 +264,27 @@ data_cad_qrt_tbl = data_qrt_tbl
     as: ["category", "percent"]
   }) // unpivot/fold the data
   .objects()
+
+
+data_cad_prov_tbl = data_prov_tbl
+  .select(
+    "Provincia",
+    "Unidade Sanitaria",
+    "Periodo",
+    "% Levantamento de ARV (CAD CPN)",
+    "% Levantamento de ARV (CAD CCR)",
+    "% Levantamento de ARV (CAD PED)",
+    "% teste de CV feita (CAD CPN)",
+    "% teste de CV feita (CAD CCR)",
+    "% teste de CV feita (CAD PED)",
+    "% resultados de CV obtidos (CAD CPN)",
+    "% resultados de CV obtidos (CAD CCR)",
+    "% resultados de CV obtidos (CAD PED)"
+  )
+  .fold(aq.not("Provincia", "Unidade Sanitaria", "Periodo"), {
+    as: ["category", "percent"]
+  }) // unpivot/fold the data
+  .objects()
   
 
 cad_ret_data_mo = data_cad_mo_tbl.filter((d) =>
@@ -207,9 +295,17 @@ cad_ret_data_qrt = data_cad_qrt_tbl.filter((d) =>
   d.category.includes("Levantamento")
 )
 
+cad_ret_data_prov = data_cad_prov_tbl.filter((d) =>
+  d.category.includes("Levantamento")
+)
+
 cad_teste_data_mo = data_cad_mo_tbl.filter((d) => d.category.includes("teste"))
 
 cad_teste_data_qrt = data_cad_qrt_tbl.filter((d) =>
+  d.category.includes("teste")
+)
+
+cad_teste_data_prov = data_cad_prov_tbl.filter((d) =>
   d.category.includes("teste")
 )
 
@@ -222,6 +318,9 @@ cad_result_data_qrt = data_cad_qrt_tbl.filter((d) =>
   d.category.includes("resultados")
 )
 
+cad_result_data_prov = data_cad_prov_tbl.filter((d) =>
+  d.category.includes("resultados")
+)
 
 //| output: false
 function wrapText(text, maxLength = 15) {
@@ -294,12 +393,24 @@ viewof pickProvince = Inputs.radio(
 selectedProv = data_month_qrt.filter((d) => d.Provincia === pickProvince)
 ```
 
+
+```{ojs}
+//| label: remove province on column
+//| output: false
+filterbyProvince = selectedProv.filter(
+  (d) =>
+    d["Unidade Sanitaria"] !== "Nampula" &&
+    d["Unidade Sanitaria"] !== "Zambezia"
+)
+```
+
+
 ```{ojs}
 //| label: Health Facility selector
 viewof pickHealthFacility = Inputs.radio(
   [...new Set(selectedProv.map((d) => d["Unidade Sanitaria"]))],
   {
-    label: "Choose Health Facility",
+    label: "Seleccione a US",
     value: [...new Set(selectedProv.map((d) => d["Unidade Sanitaria"]))][0],
     unique: true
   }
@@ -380,6 +491,17 @@ filteredQuarter = filterbyQuarter.filter((d) => {
     selectedQuarter.length === 0 || selectedQuarter.includes(d.Periodo);
   return monthMatch; 
 })
+```
+
+
+```{ojs}
+//| label: Filter data by provincia
+//| output: false
+filterbyProvincia = selectedProv.filter(
+  (d) =>
+    d["Unidade Sanitaria"] === "Nampula" ||
+    d["Unidade Sanitaria"] === "Zambezia"
+)
 ```
 
 
@@ -1358,7 +1480,7 @@ ${enrichedData.map((d, i) => html`<tr style="background-color: ${i % 2 === 0 ? '
 
 ::: {.panel-tabset}
 
-#### Dados Mensais
+#### Mensais
 
 ```{ojs}
 Plot.plot({
@@ -1462,7 +1584,7 @@ Plot.plot({
 ```
 
 
-#### Dados Trimestrais
+#### Trimestrais
 
 ```{ojs}
 Plot.plot({
@@ -1540,6 +1662,85 @@ Plot.plot({
   marginTop: 35
 })
 ```
+
+#### Provincia
+
+```{ojs}
+Plot.plot({
+  height: 420,
+  style: {
+    fontSize: "18px" // Adjust the value as needed
+  },
+  x: { axis: null },
+  y: { axis: null, tickFormat: "s", grid: true },
+  marks: [
+    Plot.barY(data_longer_prov_tbl, {
+      x: "Periodo",
+      y: "percent",
+      fill: "Periodo",
+      fx: "category",
+      sort: { x: null, fx: { reduce: "sum" } },
+      tip: true,
+      // channels: { name: fx },
+      channels: { name: "category" },
+      title: (d) => `${d.category}\nQuarter: ${d.Periodo}\nTotal: ${d.percent}`
+    }),
+    Plot.text(data_longer_prov_tbl, {
+      x: "Periodo",
+      y: "percent",
+      text: (d) => d.percent, //textLabel,
+      fx: "category",
+      dx: 0,
+      dy: -8,
+      fontSize: 14,
+      fill: "black",
+      textAnchor: "middle",
+      fontWeight: "500"
+    }),
+    Plot.ruleY([0])
+  ],
+  fx: {
+    label: null,
+    tickFormat: (d) => {
+      // Custom wrapping for specific long labels
+      const wrappedLabels = {
+        "Mulheres grávidas na 1ª CPN": "Mulheres grávidas\nna 1ª CPN",
+        "Mulheres grávidas testados para HIV na 1ª CPN":
+          "Mulheres grávidas\ntestados para HIV\nna 1ª CPN",
+        "Total de mulheres grávidas HIV+ na 1ª CPN":
+          "Total de mulheres\ngrávidas HIV+\nna 1ª CPN",
+        "Numero de mulheres HIV positivas a entrada (MFR)":
+          "Numero de mulheres\nHIV positivas a\nentrada (MFR)",
+        "Numero de mulheres testadas HIV positivo na CPN (MFR)":
+          "Numero de mulheres\ntestadas HIV positivo\nna CPN (MFR)",
+        "Numero de mulheres HIV positivas que iniciaram TARV na CPN":
+          "Numero de mulheres\nHIV positivas que\niniciaram TARV na CPN"
+      };
+
+      // Use custom wrapping first, then fall back to wrapText function
+      if (wrappedLabels[d]) {
+        return wrappedLabels[d];
+      } else {
+        const wrapped = wrapText(d, 20, 20); // Using smaller font for wrapped text
+        return wrapped.text;
+      }
+    },
+    tickSize: 0,
+    tickPadding: 5
+  },
+
+  color: {
+    legend: true,
+    domain: ["1º trimestre", "2º trimestre", "3º trimestre", "4º trimestre"],
+    range: ["#524FA1", "#FCB715", "#59C1A5", "#b5b1d8"]
+  },
+  label: null,
+  width,
+  marginLeft: 50,
+  marginBottom: 60,
+  marginTop: 35
+})
+```
 :::
 :::
 
@@ -1550,7 +1751,7 @@ Plot.plot({
 
 ::: {.panel-tabset}
 
-#### Dados Mensais
+#### Mensais
 
 ```{ojs}
 Plot.plot({
@@ -1672,7 +1873,7 @@ Plot.plot({
 })
 ```
 
-#### Dados Trimestrais
+#### Trimestrais
 
 ```{ojs}
 Plot.plot({
@@ -1769,6 +1970,94 @@ Plot.plot({
   //}
 })
 ```
+
+#### Provincia
+```{ojs}
+Plot.plot({
+  height: 420,
+  style: {
+    fontSize: "18px" // Adjust the value as needed
+  },
+  x: { axis: null },
+  y: { axis: null, tickFormat: "s", grid: true },
+  marks: [
+    Plot.barY(data_eid_prov_longer_tbl, {
+      x: "Periodo",
+      y: "percent",
+      fill: "Periodo",
+      fx: "category",
+      sort: { x: null, fx: { reduce: "sum" } },
+      tip: true,
+      channels: { name: "category" },
+      title: (d) => `${d.category}\nQuarter: ${d.Periodo}\nTotal: ${d.percent}`
+    }),
+    Plot.text(data_eid_prov_longer_tbl, {
+      x: (d) => d.Periodo,
+      y: "percent",
+      text: (d) => d.percent.toLocaleString(),
+      fx: "category",
+      dx: 0,
+      dy: -8,
+      fontSize: 14,
+      fill: "black",
+      textAnchor: "middle",
+      fontWeight: "500"
+    }),
+    Plot.ruleY([0])
+  ],
+  color: {
+    legend: true,
+    domain: ["1º trimestre", "2º trimestre", "3º trimestre", "4º trimestre"],
+    range: ["#524FA1", "#FCB715", "#59C1A5", "#b5b1d8"]
+  },
+  fx: {
+    label: null,
+    tickFormat: (d) => {
+      // Custom wrapping for specific long labels
+      const wrappedLabels = {
+        // "Crianças expostas ao HIV": "Crianças expostas\nao HIV",
+        // "Crianças expostas ao HIV (<2 meses)":
+        //   "Crianças expostas\nao HIV\n(<2 meses)",
+        // "Crianças expostas ao HIV (2 - 12 meses)":
+        //   "Crianças expostas\nao HIV\n(2 - 12 meses)",
+        // "Crianças expostas ao HIV (12 - 18 meses)":
+        //   "Crianças expostas\nao HIV\n(12 - 18 meses)",
+        "1º teste de PCR colhido": "1º teste de PCR\ncolhido",
+        "1º teste de PCR colhido (<2 meses)":
+          "1º teste de PCR\ncolhido\n(<2 meses)",
+        "1º teste de PCR colhido (2-12 meses)":
+          "1º teste de PCR\ncolhido\n(2-12 meses)",
+        "1º teste de PCR colhido (12-18 meses)":
+          "1º teste de PCR\ncolhido\n(12-18 meses)",
+        "Crianças com teste de HIV+": "Crianças com\nteste de HIV+",
+        "Crianças com teste de HIV+ (< 2 meses)":
+          "Crianças com\nteste de HIV+\n(< 2 meses)",
+        "Crianças com teste de HIV+ (2-12 meses)":
+          "Crianças com\nteste de HIV+\n(2-12 meses)",
+        "Crianças com teste de HIV+ (0-12 Months)":
+          "Crianças com\nteste de HIV+\n(0-12 Months)",
+        "Crianças com teste de HIV+ (12-18 meses)":
+          "Crianças com\nteste de HIV+\n(12-18 meses)",
+        "Crianças com HIV+ em TARV": "Crianças com\nHIV+ em TARV",
+        "Crianças com HIV+ em TARV (< 2 meses)":
+          "Crianças com\nHIV+ em TARV\n(< 2 meses)",
+        "Crianças com HIV+ em TARV (2 - 12 meses)":
+          "Crianças com\nHIV+ em TARV\n(2 - 12 meses)",
+        "Crianças com HIV+ em TARV (12 - 18 meses)":
+          "Crianças com\nHIV+ em TARV\n(12 - 18 meses)"
+      };
+      return wrappedLabels[d] || wrapText(d, 12);
+    },
+    tickSize: 0,
+    tickPadding: 5
+  },
+  width,
+  marginLeft: 50,
+  marginBottom: 60,
+  marginTop: 35
+})
+```
+
 :::
 :::
 
@@ -1779,7 +2068,7 @@ Plot.plot({
 
 ::: {.panel-tabset}
 
-#### Dados Mensais
+#### Mensais
 
 ```{ojs}
 Plot.plot({
@@ -1871,7 +2160,7 @@ Plot.plot({
 })
 ```
 
-#### Dados Trimestrais
+#### Trimestrais
 
 ```{ojs}
 Plot.plot({
@@ -1938,6 +2227,74 @@ Plot.plot({
   marginTop: 35 // Espaço para os valores no topo
 })
 ```
+
+#### Provincia
+```{ojs}
+Plot.plot({
+  height: 420,
+  x: { axis: null },
+  y: { axis: null, tickFormat: "s", grid: true },
+  style: {
+    fontSize: "18px" // Adjust this value as needed
+  },
+  marks: [
+    Plot.barY(data_suppression_prov_tbl, {
+      x: "Periodo",
+      y: "percent",
+      fill: "Periodo",
+      fx: "category",
+      sort: { x: null, fx: { reduce: "sum" } },
+      tip: true,
+      channels: { name: "category" },
+      title: (d) => `${d.category}\nQuarter: ${d.Periodo}\nTotal: ${d.percent}`
+    }),
+    // Remover a duplicação - mostrar texto apenas uma vez por barra
+    Plot.text(data_suppression_prov_tbl, {
+      x: (d) => d.Periodo,
+      y: "percent",
+      text: (d) => `${(d.percent.toLocaleString() * 100).toFixed(1)}%`,
+      fx: "category", // Importante: adicionar fx aqui também
+      dx: 0,
+      dy: -8,
+      fontSize: 14,
+      fill: "black",
+      textAnchor: "middle",
+      fontWeight: "500"
+    }),
+    Plot.ruleY([0])
+  ],
+  color: {
+    legend: true,
+    domain: ["1º trimestre", "2º trimestre", "3º trimestre", "4º trimestre"],
+    range: ["#524FA1", "#FCB715", "#59C1A5", "#b5b1d8"]
+  },
+  fx: {
+    label: null,
+    tickFormat: (d) => {
+      // Custom wrapping for specific long labels
+      const wrappedLabels = {
+        "Ligacao na CPN": "Ligacao\nna CPN",
+        "% de utentes com CV suprimida na CPN":
+          "% de utentes\ncom CV suprimida\nna CPN",
+        "Ligacao na CCR": "Ligacao\nna CCR",
+        "% de utentes com CV suprimida na CCR":
+          "% de utentes\ncom CV suprimida\nna CCR",
+        "% de crianças com resultado de CV suprimida":
+          "% de crianças\ncom resultado de\nCV suprimida"
+      };
+      return wrappedLabels[d] || wrapText(d, 12);
+    },
+    tickSize: 0,
+    tickPadding: 5
+  },
+  label: null,
+  width,
+  marginLeft: 50,
+  marginBottom: 60,
+  marginTop: 35 // Espaço para os valores no topo
+})
+```
+
 :::
 :::
 
@@ -1951,7 +2308,7 @@ Plot.plot({
 
 ::: {.panel-tabset}
 
-#### Dados Mensais
+#### Mensais
 
 ```{ojs}
 Plot.plot({
@@ -2005,7 +2362,7 @@ Plot.plot({
 ```
 
 
-#### Dados Trimestrais
+#### Trimestrais
 
 ```{ojs}
 Plot.plot({
@@ -2057,6 +2414,59 @@ Plot.plot({
   marginTop: 35 // Espaço para os valores no topo
 })
 ```
+
+#### Provincia
+```{ojs}
+Plot.plot({
+  height: 420,
+  x: { axis: null },
+  y: { axis: null, tickFormat: "s", grid: true },
+  style: {
+    fontSize: "18px" // Adjust this value as needed
+  },
+  marks: [
+    Plot.barY(cad_ret_data_prov, {
+      x: "category",
+      y: "percent",
+      fill: "category",
+      fx: "Periodo",
+      sort: { x: null, fx: { reduce: "sum" } },
+      tip: true,
+      channels: { name: "Periodo" },
+      title: (d) => `${d.category}\nQuarter: ${d.Periodo}\nTotal: ${d.percent}`
+    }),
+    Plot.text(cad_ret_data_prov, {
+      x: "category",
+      y: "percent",
+      text: (d) => `${(d.percent * 100).toFixed(1)}%`,
+      fx: "Periodo", // Importante: adicionar fx aqui também
+      dx: 0,
+      dy: -8,
+      fontSize: 14,
+      fill: "black",
+      textAnchor: "middle",
+      fontWeight: "500"
+    }),
+    Plot.ruleY([0])
+  ],
+  color: {
+    legend: true,
+    domain: [
+      "% Levantamento de ARV (CAD CPN)",
+      "% Levantamento de ARV (CAD CCR)",
+      "% Levantamento de ARV (CAD PED)"
+    ],
+    range: ["#847dbb", "#B6DFD2", "#FCB715"],
+    className: "large-font"
+  },
+  label: null,
+  width,
+  marginLeft: 50,
+  marginBottom: 60,
+  marginTop: 35 // Espaço para os valores no topo
+})
+```
+
 :::
 :::
 
@@ -2067,7 +2477,7 @@ Plot.plot({
 
 ::: {.panel-tabset}
 
-#### Dados Mensais
+#### Mensais
 
 ```{ojs}
 Plot.plot({
@@ -2120,7 +2530,7 @@ Plot.plot({
 })
 ```
 
-#### Dados Trimestrais
+#### Trimestrais
 
 ```{ojs}
 Plot.plot({
@@ -2173,6 +2583,59 @@ Plot.plot({
 })
 ```
 
+#### Provincia
+```{ojs}
+Plot.plot({
+  height: 420,
+  x: { axis: null },
+  y: { axis: null, tickFormat: "s", grid: true },
+  style: {
+    fontSize: "18px" // Adjust this value as needed
+  },
+  marks: [
+    Plot.barY(cad_teste_data_prov, {
+      x: "category",
+      y: "percent",
+      fill: "category",
+      fx: "Periodo",
+      sort: { x: null, fx: { reduce: "sum" } },
+      tip: true,
+      channels: { name: "Periodo" },
+      title: (d) => `${d.category}\nQuarter: ${d.Periodo}\nTotal: ${d.percent}`
+    }),
+    Plot.text(cad_teste_data_prov, {
+      x: "category",
+      y: "percent",
+      text: (d) => `${(d.percent * 100).toFixed(1)}%`,
+      fx: "Periodo", // Importante: adicionar fx aqui também
+      dx: 0,
+      dy: -8,
+      fontSize: 12,
+      fill: "black",
+      textAnchor: "middle",
+      fontWeight: "500"
+    }),
+    Plot.ruleY([0])
+  ],
+  color: {
+    legend: true,
+    domain: [
+      "% teste de CV feita (CAD CPN)",
+      "% teste de CV feita (CAD CCR)",
+      "% teste de CV feita (CAD PED)"
+    ],
+    range: ["#847dbb", "#B6DFD2", "#FCB715"],
+    className: "large-font"
+  },
+  label: null,
+  width,
+  marginLeft: 50,
+  marginBottom: 60,
+  marginTop: 35 // Espaço para os valores no topo
+})
+```
+
+
 :::
 :::
   
@@ -2183,7 +2646,7 @@ Plot.plot({
 
 ::: {.panel-tabset}
 
-#### Dados Mensais
+#### Mensais
 
 ```{ojs}
 Plot.plot({
@@ -2237,7 +2700,7 @@ Plot.plot({
 ```
 
 
-#### Dados Trimestrais
+#### Trimestrais
 
 ```{ojs}
 Plot.plot({
@@ -2288,6 +2751,58 @@ Plot.plot({
   marginBottom: 60,
   marginTop: 35 // Espaço para os valores no topo
 })  
+```
+
+#### Provincia
+```{ojs}
+Plot.plot({
+  height: 420,
+  x: { axis: null },
+  y: { axis: null, tickFormat: "s", grid: true },
+  style: {
+    fontSize: "18px" // Adjust this value as needed
+  },
+  marks: [
+    Plot.barY(cad_result_data_prov, {
+      x: "category",
+      y: "percent",
+      fill: "category",
+      fx: "Periodo",
+      sort: { x: null, fx: { reduce: "sum" } },
+      tip: true,
+      channels: { name: "Periodo" },
+      title: (d) => `${d.category}\nQuarter: ${d.Periodo}\nTotal: ${d.percent}`
+    }),
+    Plot.text(cad_result_data_prov, {
+      x: "category",
+      y: "percent",
+      text: (d) => `${(d.percent * 100).toFixed(1)}%`,
+      fx: "Periodo", // Importante: adicionar fx aqui também
+      dx: 0,
+      dy: -8,
+      fontSize: 12,
+      fill: "black",
+      textAnchor: "middle",
+      fontWeight: "500"
+    }),
+    Plot.ruleY([0])
+  ],
+  color: {
+    legend: true,
+    domain: [
+      "% resultados de CV obtidos (CAD CPN)",
+      "% resultados de CV obtidos (CAD CCR)",
+      "% resultados de CV obtidos (CAD PED)"
+    ],
+    range: ["#847dbb", "#B6DFD2", "#FCB715"],
+    className: "large-font"
+  },
+  label: null,
+  width,
+  marginLeft: 50,
+  marginBottom: 60,
+  marginTop: 35 // Espaço para os valores no topo
+})
 ```
 
 :::
